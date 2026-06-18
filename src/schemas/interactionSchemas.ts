@@ -1,3 +1,6 @@
+// Copyright (C) 2026 AntPlc, quentinMou
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * Schema constants and helpers for interaction validation.
  */

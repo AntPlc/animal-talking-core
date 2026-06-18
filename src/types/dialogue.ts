@@ -1,3 +1,6 @@
+// Copyright (C) 2026 AntPlc, quentinMou
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * Turn-by-turn dialogue types returned by the package.
  */
