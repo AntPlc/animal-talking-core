@@ -113,6 +113,78 @@ describe("validateInteractionResult", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("accepts ADD_MEMORY and UPDATE_RELATIONSHIP for third characters known from participant knowledge", () => {
+    const context = buildValidationContext(
+      createInteractionInput({
+        participants: [
+          {
+            id: "fox",
+            name: "Fox",
+            role: "guide",
+            personalityTraits: ["talkative"],
+            hobbies: [],
+            speakingStyle: "sharp",
+            talkingState: {
+              idea: "warn others",
+              activity: null,
+              history: "",
+              mood: "NEUTRAL",
+              objectives: [],
+              knowledge: {
+                wolf: {
+                  targetCharacterId: "wolf",
+                  memories: [],
+                  relationship: "DISLIKED",
+                },
+              },
+            },
+          },
+          {
+            id: "rabbit",
+            name: "Rabbit",
+            role: "listener",
+            personalityTraits: ["cautious"],
+            hobbies: [],
+            speakingStyle: "quiet",
+            talkingState: {
+              idea: "listen",
+              activity: null,
+              history: "",
+              mood: "ANXIOUS",
+              objectives: [],
+              knowledge: {},
+            },
+          },
+        ],
+      }),
+    );
+
+    const result = validateInteractionResult(
+      {
+        turns: [],
+        updates: [
+          {
+            type: "ADD_MEMORY",
+            characterId: "rabbit",
+            targetCharacterId: "wolf",
+            memory: {
+              content: "Fox warned me that Wolf cannot be trusted.",
+            },
+          },
+          {
+            type: "UPDATE_RELATIONSHIP",
+            characterId: "rabbit",
+            targetCharacterId: "wolf",
+            relationship: "DISLIKED",
+          },
+        ],
+      },
+      context,
+    );
+
+    expect(result.ok).toBe(true);
+  });
+
   it("rejects invalid mood enums and unknown zone activities", () => {
     const result = validateInteractionResult(
       {

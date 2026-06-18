@@ -55,6 +55,7 @@ export interface InteractionValidationContext {
   interactionId: string;
   input: StartInteractionInput;
   participantIds: Set<string>;
+  knownCharacterIds: Set<string>;
   participantNames: Map<string, string>;
   zoneIds: Set<string>;
   maxTurns: number;

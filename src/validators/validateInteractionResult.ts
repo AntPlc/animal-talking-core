@@ -242,8 +242,8 @@ function validateCharacterUpdate(
       if (typeof characterId !== "string" || !context.participantIds.has(characterId)) {
         return fail(stringIssue(`${path}.characterId`, "characterId must reference a known participant."));
       }
-      if (typeof targetCharacterId !== "string" || !context.participantIds.has(targetCharacterId)) {
-        return fail(stringIssue(`${path}.targetCharacterId`, "targetCharacterId must reference a known participant."));
+      if (typeof targetCharacterId !== "string" || !context.knownCharacterIds.has(targetCharacterId)) {
+        return fail(stringIssue(`${path}.targetCharacterId`, "targetCharacterId must reference a known character."));
       }
       if (!isRecord(memory)) {
         return fail(objectIssue(`${path}.memory`, "memory must be an object."));
@@ -282,8 +282,8 @@ function validateCharacterUpdate(
       if (typeof characterId !== "string" || !context.participantIds.has(characterId)) {
         return fail(stringIssue(`${path}.characterId`, "characterId must reference a known participant."));
       }
-      if (typeof targetCharacterId !== "string" || !context.participantIds.has(targetCharacterId)) {
-        return fail(stringIssue(`${path}.targetCharacterId`, "targetCharacterId must reference a known participant."));
+      if (typeof targetCharacterId !== "string" || !context.knownCharacterIds.has(targetCharacterId)) {
+        return fail(stringIssue(`${path}.targetCharacterId`, "targetCharacterId must reference a known character."));
       }
       if (typeof relationship !== "string" || !relationshipTypes.includes(relationship as never)) {
         return fail({
@@ -369,6 +369,12 @@ function validateCharacterUpdate(
 
 export function buildValidationContext(input: StartInteractionInput): InteractionValidationContext {
   const participantIds = new Set(input.participants.map((participant) => participant.id));
+  const knownCharacterIds = new Set(participantIds);
+  for (const participant of input.participants) {
+    for (const targetCharacterId of Object.keys(participant.talkingState.knowledge)) {
+      knownCharacterIds.add(targetCharacterId);
+    }
+  }
   const participantNames = new Map(
     input.participants.map((participant) => [participant.id, participant.name]),
   );
@@ -378,6 +384,7 @@ export function buildValidationContext(input: StartInteractionInput): Interactio
     interactionId: input.interactionId,
     input,
     participantIds,
+    knownCharacterIds,
     participantNames,
     zoneIds,
     maxTurns: input.maxTurns ?? 6,

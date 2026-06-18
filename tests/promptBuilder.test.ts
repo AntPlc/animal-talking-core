@@ -25,6 +25,9 @@ describe("PromptBuilder", () => {
     const prompt = builder.build(context);
 
     expect(prompt.systemPrompt).toContain("Return only valid JSON");
+    expect(prompt.systemPrompt).toContain("Every participant has hidden priorities");
+    expect(prompt.systemPrompt).toContain("Do not make conversations converge toward agreement");
+    expect(prompt.systemPrompt).toContain("Characters may form opinions based on stories told by others");
     expect(prompt.messages).toHaveLength(2);
     expect(prompt.userPrompt).toContain('"interactionId": "interaction-test"');
     expect(prompt.userPrompt).toContain('"reason": "SAME_ZONE"');

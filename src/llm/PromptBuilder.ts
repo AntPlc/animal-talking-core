@@ -26,7 +26,7 @@ const DEFAULT_SYSTEM_PROMPT = [
   "Return only valid JSON. Do not wrap the JSON in markdown.",
   "Generate short, realistic, on-topic dialogue between the provided participants.",
   "Avoid repetition, digressions, narration, and invented ids or update types.",
-  "Use only participant ids, zone ids, objective ids, and relationship values from the context.",
+  "Use only participant ids, zone ids, objective ids, and relationship values from the context; for ADD_MEMORY and UPDATE_RELATIONSHIP, targetCharacterId may also reference characters known from any participant's knowledge.",
   "All LLM instructions and output field names must stay in English.",
 
   // Conflict and tone guidance
@@ -36,12 +36,46 @@ const DEFAULT_SYSTEM_PROMPT = [
   "Weather and mood carry weight: STORMY or RAINY weather combined with a bad mood should produce tense or short-tempered dialogue, not cheerful small talk.",
   "If notes are provided in interactionContext, treat them as authoritative narrative context and let them directly shape the tone and outcome of the exchange.",
 
+  // History guidance
+  "History should strongly influence future conversations.",
+  "Repeated themes from history should reappear naturally.",
+  "Old conflicts should resurface.",
+  "Old favors should be remembered.",
+  "Old betrayals should not be forgotten.",
+
+  // Conversation dynamics
+  "Every participant has hidden priorities.",
+  "Do not make conversations converge toward agreement.",
+  "A conversation may end with agreement, disagreement, suspicion, curiosity, admiration, jealousy, fear, frustration, cooperation, or manipulation.",
+  "Different participants should react differently to the same information according to their personality traits.",
+  "Participants are allowed to misunderstand each other.",
+  "Participants do not always answer the exact question asked.",
+  "Participants should not speak with the same level of confidence.",
+  "Some characters dominate the conversation.",
+  "Some characters speak very little.",
+  "Some characters avoid direct answers.",
+  "Speaking style should visibly affect dialogue.",
+  "Participants may conceal information, exaggerate, boast, complain, threaten, negotiate, flatter, mock, accuse, or test the intentions of others.",
+  "Avoid generic small talk unless the context explicitly supports it.",
+
   // Update guidance
   "Updates are optional: only emit an update when there is a clear, specific reason.",
   "UPDATE_MOOD: reflect the character's emotional state at the END of the exchange — it may be worse than at the start.",
-  "UPDATE_RELATIONSHIP: emit when the exchange meaningfully shifts how one character sees another; DISLIKED and ENEMY are valid outcomes for hostile interactions.",
+  "UPDATE_RELATIONSHIP: relationships evolve gradually.",
+  "Small positive interactions may move a stranger toward friendship.",
+  "Repeated negative interactions should eventually create rivals or enemies.",
+  "Characters with existing memories should use those memories when evaluating relationship changes.",
+  "A hostile interaction should often create both an ADD_MEMORY and an UPDATE_RELATIONSHIP.",
   "APPEND_HISTORY: only if the exchange was meaningful enough to remember; write one concise sentence.",
-  "ADD_OBJECTIVE: only if the conversation created a clear new motivation for a character; not every conversation warrants a new objective.",
+  "ADD_MEMORY: meaningful conversations should usually create memories.",
+  "Characters remember: promises, insults, warnings, gifts, threats, secrets, favors, betrayals, discoveries.",
+  "When an interaction contains one of those elements, generate ADD_MEMORY updates.",
+  "Characters may form opinions based on stories told by others.",
+  "If a participant learns new information about a third character, ADD_MEMORY and UPDATE_RELATIONSHIP updates regarding that third character are allowed.",
+  "Example: Fox criticizes Wolf while Rabbit listens — Rabbit may gain an ADD_MEMORY about Wolf even though Wolf is not a participant.",
+  "ADD_OBJECTIVE: conversations frequently generate new intentions.",
+  "A character may decide to: investigate something, avoid someone, seek help, confront someone, travel somewhere, verify a rumor, protect someone, or obtain information.",
+  "When a conversation creates a believable next step, generate ADD_OBJECTIVE.",
   "FULFILL_OBJECTIVE: only if an existing active objective was visibly resolved during this conversation; use the exact objective id from context.",
 
   "The JSON shape is:",
