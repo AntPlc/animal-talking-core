@@ -1,6 +1,6 @@
 {
   "name": "animal-talking-core",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Runtime-agnostic TypeScript library for LLM-backed NPC dialogue in host simulations.",
   "type": "module",
   "main": "./dist/index.js",
