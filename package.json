@@ -1,0 +1,54 @@
+{
+  "name": "animal-talking-core",
+  "version": "0.1.2",
+  "description": "Runtime-agnostic TypeScript library for LLM-backed NPC dialogue in host simulations.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "keywords": [
+    "npc",
+    "dialogue",
+    "llm",
+    "simulation",
+    "game-ai",
+    "animal-crossing",
+    "character",
+    "typescript"
+  ],
+  "author": "AntPlc",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AntPlc/animal-talking-core.git"
+  },
+  "homepage": "https://github.com/AntPlc/animal-talking-core#readme",
+  "bugs": {
+    "url": "https://github.com/AntPlc/animal-talking-core/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.9"
+  }
+}
