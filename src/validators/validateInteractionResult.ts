@@ -10,13 +10,13 @@ import {
   hasOnlyKeys,
   isRecord,
   moods,
-  objectiveTypes,
+  activityTypes,
   objectIssue,
   relationshipTypes,
   stringIssue,
 } from "../schemas/interactionSchemas.js";
-import type { NpcGoal } from "../types/character.js";
-import type { Mood, NpcObjective, RelationshipType } from "../types/character.js";
+import type { NpcObjective } from "../types/character.js";
+import type { Mood, NpcActivity, RelationshipType } from "../types/character.js";
 import type { DialogueTurn } from "../types/dialogue.js";
 import type {
   InteractionValidationContext,
@@ -59,28 +59,28 @@ function fail(...issues: ValidationIssue[]): ValidationResultError {
   };
 }
 
-function validateObjective(
+function validateActivity(
   value: unknown,
   path: string,
   context: InteractionValidationContext,
-): ValidationResult<NpcObjective | null> {
+): ValidationResult<NpcActivity | null> {
   if (value === null) {
     return { ok: true, value: null };
   }
 
   if (!isRecord(value)) {
-    return fail(objectIssue(path, "objective must be an object or null."));
+    return fail(objectIssue(path, "activity must be an object or null."));
   }
 
   if (!hasOnlyKeys(value, ["type", "targetZoneId", "targetCharacterId"])) {
-    return fail(objectIssue(path, "Unexpected keys in objective."));
+    return fail(objectIssue(path, "Unexpected keys in activity."));
   }
 
-  if (typeof value.type !== "string" || !objectiveTypes.includes(value.type as never)) {
+  if (typeof value.type !== "string" || !activityTypes.includes(value.type as never)) {
     return fail({
       path: `${path}.type`,
       code: "invalid_enum",
-      message: "objective.type must be GO_TO_LOCATION, TALK_TO_CHARACTER, or IDLE.",
+      message: "activity.type must be GO_TO_LOCATION, TALK_TO_CHARACTER, or IDLE.",
     });
   }
 
@@ -115,7 +115,7 @@ function validateObjective(
       return fail({
         path: `${path}.type`,
         code: "invalid_enum",
-        message: "Unsupported objective type.",
+        message: "Unsupported activity type.",
       });
   }
 }
@@ -213,24 +213,24 @@ function validateCharacterUpdate(
       }
       return { ok: true, value: { type: "UPDATE_MOOD", characterId, mood: mood as Mood } };
     }
-    case "UPDATE_OBJECTIVE": {
-      if (!hasOnlyKeys(value, ["type", "characterId", "objective"])) {
-        return fail(objectIssue(path, "Unexpected keys in UPDATE_OBJECTIVE."));
+    case "UPDATE_ACTIVITY": {
+      if (!hasOnlyKeys(value, ["type", "characterId", "activity"])) {
+        return fail(objectIssue(path, "Unexpected keys in UPDATE_ACTIVITY."));
       }
-      const { characterId, objective } = value;
+      const { characterId, activity } = value;
       if (typeof characterId !== "string" || !context.participantIds.has(characterId)) {
         return fail(stringIssue(`${path}.characterId`, "characterId must reference a known participant."));
       }
-      const validatedObjective = validateObjective(objective, `${path}.objective`, context);
-      if (!validatedObjective.ok) {
-        return validatedObjective;
+      const validatedActivity = validateActivity(activity, `${path}.activity`, context);
+      if (!validatedActivity.ok) {
+        return validatedActivity;
       }
       return {
         ok: true,
         value: {
-          type: "UPDATE_OBJECTIVE",
+          type: "UPDATE_ACTIVITY",
           characterId,
-          objective: validatedObjective.value,
+          activity: validatedActivity.value,
         },
       };
     }
@@ -318,45 +318,45 @@ function validateCharacterUpdate(
         value: { type: "APPEND_HISTORY", characterId, summary: normalizeText(summary) },
       };
     }
-    case "ADD_GOAL": {
-      if (!hasOnlyKeys(value, ["type", "characterId", "goal"])) {
-        return fail(objectIssue(path, "Unexpected keys in ADD_GOAL."));
+    case "ADD_OBJECTIVE": {
+      if (!hasOnlyKeys(value, ["type", "characterId", "objective"])) {
+        return fail(objectIssue(path, "Unexpected keys in ADD_OBJECTIVE."));
       }
-      const { characterId, goal } = value;
+      const { characterId, objective } = value;
       if (typeof characterId !== "string" || !context.participantIds.has(characterId)) {
         return fail(stringIssue(`${path}.characterId`, "characterId must reference a known participant."));
       }
-      if (!isRecord(goal)) {
-        return fail(objectIssue(`${path}.goal`, "goal must be an object."));
+      if (!isRecord(objective)) {
+        return fail(objectIssue(`${path}.objective`, "objective must be an object."));
       }
-      if (!hasOnlyKeys(goal, ["id", "description", "status"])) {
-        return fail(objectIssue(`${path}.goal`, "Unexpected keys in goal."));
+      if (!hasOnlyKeys(objective, ["id", "description", "status"])) {
+        return fail(objectIssue(`${path}.objective`, "Unexpected keys in objective."));
       }
-      if (typeof goal.description !== "string" || goal.description.trim() === "") {
-        return fail(stringIssue(`${path}.goal.description`, "goal.description must be a non-empty string."));
+      if (typeof objective.description !== "string" || objective.description.trim() === "") {
+        return fail(stringIssue(`${path}.objective.description`, "objective.description must be a non-empty string."));
       }
-      const normalizedGoal: NpcGoal = {
+      const normalizedObjective: NpcObjective = {
         id:
-          typeof goal.id === "string" && goal.id.trim() !== ""
-            ? goal.id.trim()
-            : createGeneratedId("goal"),
-        description: normalizeText(goal.description),
+          typeof objective.id === "string" && objective.id.trim() !== ""
+            ? objective.id.trim()
+            : createGeneratedId("objective"),
+        description: normalizeText(objective.description),
         status: "active",
       };
-      return { ok: true, value: { type: "ADD_GOAL", characterId, goal: normalizedGoal } };
+      return { ok: true, value: { type: "ADD_OBJECTIVE", characterId, objective: normalizedObjective } };
     }
-    case "FULFILL_GOAL": {
-      if (!hasOnlyKeys(value, ["type", "characterId", "goalId"])) {
-        return fail(objectIssue(path, "Unexpected keys in FULFILL_GOAL."));
+    case "FULFILL_OBJECTIVE": {
+      if (!hasOnlyKeys(value, ["type", "characterId", "objectiveId"])) {
+        return fail(objectIssue(path, "Unexpected keys in FULFILL_OBJECTIVE."));
       }
-      const { characterId, goalId } = value;
+      const { characterId, objectiveId } = value;
       if (typeof characterId !== "string" || !context.participantIds.has(characterId)) {
         return fail(stringIssue(`${path}.characterId`, "characterId must reference a known participant."));
       }
-      if (typeof goalId !== "string" || goalId.trim() === "") {
-        return fail(stringIssue(`${path}.goalId`, "goalId must be a non-empty string."));
+      if (typeof objectiveId !== "string" || objectiveId.trim() === "") {
+        return fail(stringIssue(`${path}.objectiveId`, "objectiveId must be a non-empty string."));
       }
-      return { ok: true, value: { type: "FULFILL_GOAL", characterId, goalId: goalId.trim() } };
+      return { ok: true, value: { type: "FULFILL_OBJECTIVE", characterId, objectiveId: objectiveId.trim() } };
     }
     default:
       return fail({

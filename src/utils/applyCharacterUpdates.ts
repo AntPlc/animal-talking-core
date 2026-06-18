@@ -29,8 +29,8 @@ export function applyCharacterUpdates(
       case "UPDATE_MOOD":
         character.talkingState.mood = update.mood;
         break;
-      case "UPDATE_OBJECTIVE":
-        character.talkingState.objective = update.objective;
+      case "UPDATE_ACTIVITY":
+        character.talkingState.activity = update.activity;
         break;
       case "ADD_MEMORY": {
         const knowledge =
@@ -59,14 +59,16 @@ export function applyCharacterUpdates(
         character.talkingState.history += separator + update.summary;
         break;
       }
-      case "ADD_GOAL": {
-        character.talkingState.activeGoals.push(update.goal);
+      case "ADD_OBJECTIVE": {
+        character.talkingState.objectives.push(update.objective);
         break;
       }
-      case "FULFILL_GOAL": {
-        const goal = character.talkingState.activeGoals.find((g) => g.id === update.goalId);
-        if (goal) {
-          goal.status = "fulfilled";
+      case "FULFILL_OBJECTIVE": {
+        const objective = character.talkingState.objectives.find(
+          (entry) => entry.id === update.objectiveId,
+        );
+        if (objective) {
+          objective.status = "fulfilled";
         }
         break;
       }

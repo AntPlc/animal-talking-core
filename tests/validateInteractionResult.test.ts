@@ -113,7 +113,7 @@ describe("validateInteractionResult", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("rejects invalid mood enums and unknown zone objectives", () => {
+  it("rejects invalid mood enums and unknown zone activities", () => {
     const result = validateInteractionResult(
       {
         turns: [],
@@ -124,9 +124,9 @@ describe("validateInteractionResult", () => {
             mood: "SLEEPY",
           },
           {
-            type: "UPDATE_OBJECTIVE",
+            type: "UPDATE_ACTIVITY",
             characterId: "fox",
-            objective: {
+            activity: {
               type: "GO_TO_LOCATION",
               targetZoneId: "unknown_place",
             },
@@ -142,6 +142,6 @@ describe("validateInteractionResult", () => {
     }
 
     expect(result.error.issues.map((issue) => issue.path)).toContain("$.updates[0].mood");
-    expect(result.error.issues.map((issue) => issue.path)).toContain("$.updates[1].objective.targetZoneId");
+    expect(result.error.issues.map((issue) => issue.path)).toContain("$.updates[1].activity.targetZoneId");
   });
 });

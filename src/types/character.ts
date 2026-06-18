@@ -35,13 +35,13 @@ export interface CharacterKnowledge {
   relationship: RelationshipType;
 }
 
-export interface NpcGoal {
+export interface NpcObjective {
   id: string;
   description: string;
   status: "active" | "fulfilled";
 }
 
-export type NpcObjective =
+export type NpcActivity =
   | {
       type: "GO_TO_LOCATION";
       targetZoneId: string;
@@ -56,11 +56,11 @@ export type NpcObjective =
 
 export interface NpcTalkingState {
   idea: string;
-  objective: NpcObjective | null;
+  activity: NpcActivity | null;
   history: string;
   mood: Mood;
   knowledge: Record<string, CharacterKnowledge>;
-  activeGoals: NpcGoal[];
+  objectives: NpcObjective[];
 }
 
 export interface TalkingCharacter {
@@ -68,7 +68,7 @@ export interface TalkingCharacter {
   name: string;
   role?: string;
   personalityTraits?: string[];
-  goals?: string[];
+  hobbies?: string[];
   speakingStyle?: string;
   talkingState: NpcTalkingState;
 }

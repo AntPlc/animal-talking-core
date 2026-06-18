@@ -21,9 +21,9 @@ describe("AnimalTalkingEngine", () => {
           ],
           updates: [
             {
-              type: "UPDATE_OBJECTIVE",
+              type: "UPDATE_ACTIVITY",
               characterId: "fox",
-              objective: {
+              activity: {
                 type: "GO_TO_LOCATION",
                 targetZoneId: "pool",
               },
@@ -49,12 +49,12 @@ describe("AnimalTalkingEngine", () => {
     expect(result.turns).toHaveLength(1);
     expect(result.turns[0].speakerName).toBe("Fox");
     expect(result.updates.map((update) => update.type)).toEqual([
-      "UPDATE_OBJECTIVE",
+      "UPDATE_ACTIVITY",
       "ADD_MEMORY",
     ]);
 
     const updatedParticipants = applyCharacterUpdates(createParticipants(), result.updates);
-    expect(updatedParticipants[0].talkingState.objective).toEqual({
+    expect(updatedParticipants[0].talkingState.activity).toEqual({
       type: "GO_TO_LOCATION",
       targetZoneId: "pool",
     });

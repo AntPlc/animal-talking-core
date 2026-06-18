@@ -8,7 +8,7 @@
 import type {
   MemoryEntry,
   Mood,
-  NpcGoal,
+  NpcActivity,
   NpcObjective,
   RelationshipType,
 } from "./character.js";
@@ -19,10 +19,10 @@ export interface UpdateMood {
   mood: Mood;
 }
 
-export interface UpdateObjective {
-  type: "UPDATE_OBJECTIVE";
+export interface UpdateActivity {
+  type: "UPDATE_ACTIVITY";
   characterId: string;
-  objective: NpcObjective | null;
+  activity: NpcActivity | null;
 }
 
 export interface AddMemory {
@@ -45,23 +45,23 @@ export interface AppendHistory {
   summary: string;
 }
 
-export interface AddGoal {
-  type: "ADD_GOAL";
+export interface AddObjective {
+  type: "ADD_OBJECTIVE";
   characterId: string;
-  goal: NpcGoal;
+  objective: NpcObjective;
 }
 
-export interface FulfillGoal {
-  type: "FULFILL_GOAL";
+export interface FulfillObjective {
+  type: "FULFILL_OBJECTIVE";
   characterId: string;
-  goalId: string;
+  objectiveId: string;
 }
 
 export type CharacterUpdate =
   | UpdateMood
-  | UpdateObjective
+  | UpdateActivity
   | AddMemory
   | UpdateRelationship
   | AppendHistory
-  | AddGoal
-  | FulfillGoal;
+  | AddObjective
+  | FulfillObjective;

@@ -109,7 +109,7 @@ interface TalkingCharacter {
   name: string;                    // required — display name; used to fill speakerName
   role?: string;                   // optional — sent to LLM context
   personalityTraits?: string[];    // optional — sent to LLM context
-  goals?: string[];                // optional — sent to LLM context
+  hobbies?: string[];                // optional — sent to LLM context
   speakingStyle?: string;          // optional — sent to LLM context
   talkingState: NpcTalkingState;   // required
 }
@@ -122,11 +122,11 @@ Current mental/social state of a character during an interaction.
 ```ts
 interface NpcTalkingState {
   idea: string;                              // required — current thought/intent
-  objective: NpcObjective | null;            // required — current goal or null
+  activity: NpcActivity | null;            // required — current world activity or null
   history: string;                           // required — background summary
   mood: Mood;                                // required — see [Mood](#mood)
   knowledge: Record<string, CharacterKnowledge>; // required — keyed by targetCharacterId
-  activeGoals: NpcGoal[];                          // required — dynamic goals; may be empty
+  objectives: NpcObjective[];                          // required — dynamic objectives; may be empty
 }
 ```
 
@@ -152,18 +152,32 @@ interface MemoryEntry {
 }
 ```
 
-### `NpcObjective`
+### `NpcActivity`
 
-Discriminated union for character objectives.
+Discriminated union for character world activities.
 
 ```ts
-type NpcObjective =
+type NpcActivity =
   | { type: "GO_TO_LOCATION"; targetZoneId: string }
   | { type: "TALK_TO_CHARACTER"; targetCharacterId: string }
   | { type: "IDLE" };
 ```
 
 When validating provider output, `targetZoneId` must reference a zone in `worldContext.zones`, and `targetCharacterId` must reference a participant id.
+
+### `NpcObjective`
+
+Tracked narrative objective with lifecycle.
+
+```ts
+interface NpcObjective {
+  id: string;
+  description: string;
+  status: "active" | "fulfilled";
+}
+```
+
+Lives in `talkingState.objectives: NpcObjective[]`. The host decides when to archive or clear fulfilled objectives.
 
 ### `WorldContext`
 
@@ -234,7 +248,7 @@ flowchart LR
       nameField["name"]
       roleField["role"]
       traitsField["personalityTraits"]
-      goalsField["goals"]
+      hobbiesField["hobbies"]
       styleField["speakingStyle"]
     end
 
@@ -242,7 +256,7 @@ flowchart LR
       ideaField["idea"]
       historyField["history"]
       moodField["mood"]
-      objectiveField["objective"]
+      activityField["activity"]
     end
 
     subgraph knowledge [CharacterKnowledge]
@@ -260,12 +274,12 @@ flowchart LR
   hostWrite --> nameField
   hostWrite --> roleField
   hostWrite --> traitsField
-  hostWrite --> goalsField
+  hostWrite --> hobbiesField
   hostWrite --> styleField
   hostWrite --> ideaField
   hostWrite --> historyField
   hostWrite --> moodField
-  hostWrite --> objectiveField
+  hostWrite --> activityField
   hostWrite --> relationshipField
   hostWrite --> memoriesField
 
@@ -273,22 +287,22 @@ flowchart LR
   llmRead -.-> nameField
   llmRead -.-> roleField
   llmRead -.-> traitsField
-  llmRead -.-> goalsField
+  llmRead -.-> hobbiesField
   llmRead -.-> styleField
   llmRead -.-> ideaField
   llmRead -.-> historyField
   llmRead -.-> moodField
-  llmRead -.-> objectiveField
+  llmRead -.-> activityField
   llmRead -.-> relationshipField
   llmRead -.-> memoriesField
 
   llmPropose --> moodField
-  llmPropose --> objectiveField
+  llmPropose --> activityField
   llmPropose --> relationshipField
   llmPropose --> memoriesField
 
   hostApply --> moodField
-  hostApply --> objectiveField
+  hostApply --> activityField
   hostApply --> relationshipField
   hostApply --> memoriesField
 ```
@@ -304,13 +318,13 @@ Dotted arrows (`-.->`) represent read-only access in the prompt.
 | Identity | `name` | `[S]` + `[R]` | — |
 | Identity | `role` | `[S]` + `[R]` | — |
 | Identity | `personalityTraits` | `[S]` + `[R]` | — |
-| Identity | `goals` | `[S]` + `[R]` | — |
+| Identity | `hobbies` | `[S]` + `[R]` | — |
 | Identity | `speakingStyle` | `[S]` + `[R]` | — |
 | TalkingState | `idea` | `[S]` + `[R]` | — |
 | TalkingState | `history` | `[S+L]` | `APPEND_HISTORY` |
 | TalkingState | `mood` | `[S+L]` | `UPDATE_MOOD` |
-| TalkingState | `objective` | `[S+L]` | `UPDATE_OBJECTIVE` |
-| TalkingState | `activeGoals[]` | `[S+L]` | `ADD_GOAL`, `FULFILL_GOAL` |
+| TalkingState | `activity` | `[S+L]` | `UPDATE_ACTIVITY` |
+| TalkingState | `objectives[]` | `[S+L]` | `ADD_OBJECTIVE`, `FULFILL_OBJECTIVE` |
 | Knowledge | `relationship` | `[S+L]` | `UPDATE_RELATIONSHIP` |
 | Knowledge | `memories[]` | `[S+L]` | `ADD_MEMORY` |
 
@@ -319,14 +333,14 @@ Dotted arrows (`-.->`) represent read-only access in the prompt.
 | Actor | Reads | Writes directly | Proposes via update |
 |-------|-------|-----------------|---------------------|
 | Classic system | All fields | All fields | — |
-| LLM | All fields in prompt | Never | `mood`, `objective`, `history` (append), `activeGoals[]`, `relationship`, `memories[]` |
+| LLM | All fields in prompt | Never | `mood`, `activity`, `history` (append), `objectives[]`, `relationship`, `memories[]` |
 | Package | Provider JSON | Never | Validates proposed updates only |
 
 Identity fields and the `idea` field are **never modified by the LLM**.
 They shape dialogue generation but remain under full host control.
 
 `history` is **appended** (never replaced) — the LLM adds a one-sentence summary at the end.
-`activeGoals` has a lifecycle: `ADD_GOAL` creates an active goal; `FULFILL_GOAL` marks it fulfilled. Only active goals are sent in the prompt.
+`objectives` has a lifecycle: `ADD_OBJECTIVE` creates an active objective; `FULFILL_OBJECTIVE` marks it fulfilled. Only active objectives are sent in the prompt.
 
 ### Shared update flow (`[S+L]` fields)
 
@@ -414,13 +428,13 @@ Discriminated union of structured state mutations. All four types are validated 
 
 Allowed keys: `type`, `characterId`, `mood`.
 
-#### `UPDATE_OBJECTIVE`
+#### `UPDATE_ACTIVITY`
 
 ```ts
-{ type: "UPDATE_OBJECTIVE"; characterId: string; objective: NpcObjective | null }
+{ type: "UPDATE_ACTIVITY"; characterId: string; activity: NpcActivity | null }
 ```
 
-Allowed keys: `type`, `characterId`, `objective`.
+Allowed keys: `type`, `characterId`, `activity`.
 
 #### `ADD_MEMORY`
 
@@ -471,41 +485,29 @@ Allowed keys: `type`, `characterId`, `targetCharacterId`, `relationship`.
 Allowed keys: `type`, `characterId`, `summary`. `summary` is trimmed and whitespace-collapsed.
 Applied by appending to `talkingState.history` (never replaces the existing value).
 
-#### `ADD_GOAL`
+#### `ADD_OBJECTIVE`
 
 ```ts
 {
-  type: "ADD_GOAL";
+  type: "ADD_OBJECTIVE";
   characterId: string;
-  goal: { id?: string; description: string };
+  objective: { id?: string; description: string };
 }
 ```
 
-Allowed keys on `goal`: `id`, `description`, `status`. `status` is **always forced to `"active"`** regardless of what the LLM sends. `id` is auto-generated if absent. `description` is trimmed and whitespace-collapsed.
+Allowed keys on `objective`: `id`, `description`, `status`. `status` is **always forced to `"active"`** regardless of what the LLM sends. `id` is auto-generated if absent. `description` is trimmed and whitespace-collapsed.
 
-#### `FULFILL_GOAL`
+#### `FULFILL_OBJECTIVE`
 
 ```ts
 {
-  type: "FULFILL_GOAL";
+  type: "FULFILL_OBJECTIVE";
   characterId: string;
-  goalId: string;
+  objectiveId: string;
 }
 ```
 
-Allowed keys: `type`, `characterId`, `goalId`. Silently skipped if `goalId` does not match any existing goal. Only active goals are sent to the LLM in the prompt.
-
-### `NpcGoal`
-
-```ts
-interface NpcGoal {
-  id: string;
-  description: string;
-  status: "active" | "fulfilled";
-}
-```
-
-Lives in `talkingState.activeGoals: NpcGoal[]`. The host decides when to archive or clear fulfilled goals.
+Allowed keys: `type`, `characterId`, `objectiveId`. Silently skipped if `objectiveId` does not match any existing objective. Only active objectives are sent to the LLM in the prompt.
 
 ### `InteractionErrorSummary`
 
@@ -655,17 +657,17 @@ Allowed keys: `index`, `speakerId`, `message`, `mood`.
 |-----------|------|------------|
 | `mood` not in Mood enum | `$.updates[n].mood` | `invalid_enum` |
 
-#### `UPDATE_OBJECTIVE`
+#### `UPDATE_ACTIVITY`
 
 | Condition | Path | Issue code |
 |-----------|------|------------|
-| `objective` not object or null | `$.updates[n].objective` | `invalid_object` |
-| Unexpected keys in objective | `$.updates[n].objective` | `invalid_object` |
-| Invalid `objective.type` | `$.updates[n].objective.type` | `invalid_enum` |
-| `GO_TO_LOCATION`: empty `targetZoneId` | `$.updates[n].objective.targetZoneId` | `invalid_string` |
-| `GO_TO_LOCATION`: unknown zone | `$.updates[n].objective.targetZoneId` | `invalid_string` |
-| `TALK_TO_CHARACTER`: empty `targetCharacterId` | `$.updates[n].objective.targetCharacterId` | `invalid_string` |
-| `TALK_TO_CHARACTER`: unknown participant | `$.updates[n].objective.targetCharacterId` | `invalid_string` |
+| `activity` not object or null | `$.updates[n].activity` | `invalid_object` |
+| Unexpected keys in activity | `$.updates[n].activity` | `invalid_object` |
+| Invalid `activity.type` | `$.updates[n].activity.type` | `invalid_enum` |
+| `GO_TO_LOCATION`: empty `targetZoneId` | `$.updates[n].activity.targetZoneId` | `invalid_string` |
+| `GO_TO_LOCATION`: unknown zone | `$.updates[n].activity.targetZoneId` | `invalid_string` |
+| `TALK_TO_CHARACTER`: empty `targetCharacterId` | `$.updates[n].activity.targetCharacterId` | `invalid_string` |
+| `TALK_TO_CHARACTER`: unknown participant | `$.updates[n].activity.targetCharacterId` | `invalid_string` |
 
 #### `ADD_MEMORY`
 
@@ -688,21 +690,21 @@ Allowed keys: `index`, `speakerId`, `message`, `mood`.
 | Unexpected keys | `$.updates[n]` | `invalid_object` |
 | `summary` empty or not a string | `$.updates[n].summary` | `invalid_string` |
 
-#### `ADD_GOAL`
+#### `ADD_OBJECTIVE`
 
 | Condition | Path | Issue code |
 |-----------|------|------------|
 | Unexpected keys | `$.updates[n]` | `invalid_object` |
-| `goal` not an object | `$.updates[n].goal` | `invalid_object` |
-| Unexpected keys in `goal` | `$.updates[n].goal` | `invalid_object` |
-| `goal.description` empty or not a string | `$.updates[n].goal.description` | `invalid_string` |
+| `objective` not an object | `$.updates[n].objective` | `invalid_object` |
+| Unexpected keys in `objective` | `$.updates[n].objective` | `invalid_object` |
+| `objective.description` empty or not a string | `$.updates[n].objective.description` | `invalid_string` |
 
-#### `FULFILL_GOAL`
+#### `FULFILL_OBJECTIVE`
 
 | Condition | Path | Issue code |
 |-----------|------|------------|
 | Unexpected keys | `$.updates[n]` | `invalid_object` |
-| `goalId` empty or not a string | `$.updates[n].goalId` | `invalid_string` |
+| `objectiveId` empty or not a string | `$.updates[n].objectiveId` | `invalid_string` |
 
 ### Normalization (applied on success)
 
@@ -715,10 +717,10 @@ Allowed keys: `index`, `speakerId`, `message`, `mood`.
 | `MemoryEntry.id` | Generated if missing/empty: `memory_<base36timestamp>_<random>` |
 | `MemoryEntry.createdAt` | Set to ISO timestamp if missing/empty |
 | `AppendHistory.summary` | Trim + collapse whitespace |
-| `AddGoal.goal.description` | Trim + collapse whitespace |
-| `AddGoal.goal.id` | Generated if missing/empty: `goal_<base36timestamp>_<random>` |
-| `AddGoal.goal.status` | Always forced to `"active"` |
-| `FulfillGoal.goalId` | Trimmed |
+| `AddObjective.objective.description` | Trim + collapse whitespace |
+| `AddObjective.objective.id` | Generated if missing/empty: `objective_<base36timestamp>_<random>` |
+| `AddObjective.objective.status` | Always forced to `"active"` |
+| `FulfillObjective.objectiveId` | Trimmed |
 
 ---
 
@@ -741,8 +743,8 @@ These guarantees are part of the public contract.
 - Unknown `characterId` values are **silently skipped** (no throw, no error).
 - For `ADD_MEMORY` / `UPDATE_RELATIONSHIP` on unknown targets, creates a new `CharacterKnowledge` entry with default `RelationshipType.Stranger` if needed.
 - `APPEND_HISTORY`: appends with a newline separator; no separator if `history` is currently empty.
-- `FULFILL_GOAL`: silently skips if `goalId` is not found in `activeGoals`.
-- `ADD_GOAL`: pushes the normalized goal (always `status: "active"`) to `activeGoals`.
+- `FULFILL_OBJECTIVE`: silently skips if `objectiveId` is not found in `objectives`.
+- `ADD_OBJECTIVE`: pushes the normalized objective (always `status: "active"`) to `objectives`.
 
 ### `PromptBuilder.build()`
 
@@ -828,16 +830,16 @@ PROXIMITY | SAME_ZONE | SCRIPTED_EVENT
 ### `CharacterUpdate.type`
 
 ```
-UPDATE_MOOD | UPDATE_OBJECTIVE | ADD_MEMORY | UPDATE_RELATIONSHIP | APPEND_HISTORY | ADD_GOAL | FULFILL_GOAL
+UPDATE_MOOD | UPDATE_ACTIVITY | ADD_MEMORY | UPDATE_RELATIONSHIP | APPEND_HISTORY | ADD_OBJECTIVE | FULFILL_OBJECTIVE
 ```
 
-### `NpcGoal.status`
+### `NpcObjective.status`
 
 ```
 active | fulfilled
 ```
 
-### `NpcObjective.type`
+### `NpcActivity.type`
 
 ```
 GO_TO_LOCATION | TALK_TO_CHARACTER | IDLE
@@ -900,7 +902,7 @@ Entry point: [`src/index.ts`](../src/index.ts) → `"animal-talking-core"`.
 | `characterUpdateTypes` | Allowed update type strings |
 | `moods` | Allowed mood values |
 | `relationshipTypes` | Allowed relationship values |
-| `objectiveTypes` | Allowed objective type strings |
+| `activityTypes` | Allowed activity type strings |
 | `interactionReasons` | Allowed interaction reasons |
 | `weatherTypes` | Allowed weather values |
 | `isRecord`, `hasOnlyKeys` | Type guards for validation |

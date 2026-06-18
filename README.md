@@ -50,15 +50,15 @@ const input: StartInteractionInput = {
       name: "Fox",
       role: "guide",
       personalityTraits: ["curious", "helpful"],
-      goals: ["help visitors find the right trail"],
+      hobbies: ["help visitors find the right trail"],
       speakingStyle: "short and practical",
       talkingState: {
         idea: "help visitors",
-        objective: null,
+        activity: null,
         history: "Recently arrived in the forest.",
         mood: "CURIOUS",
         knowledge: {},
-        activeGoals: [],
+        objectives: [],
       },
     },
     {
@@ -66,11 +66,11 @@ const input: StartInteractionInput = {
       name: "Owl",
       role: "observer",
       personalityTraits: ["calm", "thoughtful"],
-      goals: ["protect the balance of the forest"],
+      hobbies: ["protect the balance of the forest"],
       speakingStyle: "measured and polite",
       talkingState: {
         idea: "listen carefully",
-        objective: null,
+        activity: null,
         history: "Prefers thoughtful exchanges.",
         mood: "NEUTRAL",
         knowledge: {
@@ -80,7 +80,7 @@ const input: StartInteractionInput = {
             relationship: RelationshipType.Stranger,
           },
         },
-        activeGoals: [],
+        objectives: [],
       },
     },
   ],
@@ -245,12 +245,12 @@ The LLM proposes updates; the package validates them; the host applies them.
 | Type | Fields |
 |------|--------|
 | `UPDATE_MOOD` | `characterId`, `mood` |
-| `UPDATE_OBJECTIVE` | `characterId`, `objective` (`GO_TO_LOCATION \| TALK_TO_CHARACTER \| IDLE \| null`) |
+| `UPDATE_ACTIVITY` | `characterId`, `activity` (`GO_TO_LOCATION \| TALK_TO_CHARACTER \| IDLE \| null`) |
 | `ADD_MEMORY` | `characterId`, `targetCharacterId`, `memory` |
 | `UPDATE_RELATIONSHIP` | `characterId`, `targetCharacterId`, `relationship` |
 | `APPEND_HISTORY` | `characterId`, `summary` |
-| `ADD_GOAL` | `characterId`, `goal` |
-| `FULFILL_GOAL` | `characterId`, `goalId` |
+| `ADD_OBJECTIVE` | `characterId`, `objective` |
+| `FULFILL_OBJECTIVE` | `characterId`, `objectiveId` |
 
 ### Enumerations
 
@@ -272,7 +272,7 @@ Every provider response is validated before being returned. Rejected cases:
 - invalid enum values (`Mood`, `RelationshipType`, etc.)
 - unexpected top-level keys
 - too many dialogue turns (capped by `maxTurns`)
-- invalid memory or objective shapes
+- invalid memory or activity shapes
 
 On failure, `status` is `"failed"`, `turns` and `updates` are `[]`, and `error` describes the cause.
 

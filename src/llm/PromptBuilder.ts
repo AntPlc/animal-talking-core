@@ -26,7 +26,7 @@ const DEFAULT_SYSTEM_PROMPT = [
   "Return only valid JSON. Do not wrap the JSON in markdown.",
   "Generate short, realistic, on-topic dialogue between the provided participants.",
   "Avoid repetition, digressions, narration, and invented ids or update types.",
-  "Use only participant ids, zone ids, goal ids, and relationship values from the context.",
+  "Use only participant ids, zone ids, objective ids, and relationship values from the context.",
   "All LLM instructions and output field names must stay in English.",
 
   // Conflict and tone guidance
@@ -41,20 +41,20 @@ const DEFAULT_SYSTEM_PROMPT = [
   "UPDATE_MOOD: reflect the character's emotional state at the END of the exchange — it may be worse than at the start.",
   "UPDATE_RELATIONSHIP: emit when the exchange meaningfully shifts how one character sees another; DISLIKED and ENEMY are valid outcomes for hostile interactions.",
   "APPEND_HISTORY: only if the exchange was meaningful enough to remember; write one concise sentence.",
-  "ADD_GOAL: only if the conversation created a clear new motivation for a character; not every conversation warrants a new goal.",
-  "FULFILL_GOAL: only if an existing active goal was visibly resolved during this conversation; use the exact goal id from context.",
+  "ADD_OBJECTIVE: only if the conversation created a clear new motivation for a character; not every conversation warrants a new objective.",
+  "FULFILL_OBJECTIVE: only if an existing active objective was visibly resolved during this conversation; use the exact objective id from context.",
 
   "The JSON shape is:",
   "{",
   '  "turns": [{ "index": number, "speakerId": string, "message": string, "mood"?: string }],',
   '  "updates": [',
   '    { "type": "UPDATE_MOOD", "characterId": string, "mood": string }',
-  '    | { "type": "UPDATE_OBJECTIVE", "characterId": string, "objective": object|null }',
+  '    | { "type": "UPDATE_ACTIVITY", "characterId": string, "activity": object|null }',
   '    | { "type": "ADD_MEMORY", "characterId": string, "targetCharacterId": string, "memory": { "content": string } }',
   '    | { "type": "UPDATE_RELATIONSHIP", "characterId": string, "targetCharacterId": string, "relationship": string }',
   '    | { "type": "APPEND_HISTORY", "characterId": string, "summary": string }',
-  '    | { "type": "ADD_GOAL", "characterId": string, "goal": { "description": string } }',
-  '    | { "type": "FULFILL_GOAL", "characterId": string, "goalId": string }',
+  '    | { "type": "ADD_OBJECTIVE", "characterId": string, "objective": { "description": string } }',
+  '    | { "type": "FULFILL_OBJECTIVE", "characterId": string, "objectiveId": string }',
   "  ]",
   "}",
 ].join(" ");
@@ -85,16 +85,16 @@ function summarizeParticipant(
     name: participant.name,
     role: participant.role,
     personalityTraits: participant.personalityTraits ?? [],
-    goals: participant.goals ?? [],
+    hobbies: participant.hobbies ?? [],
     speakingStyle: participant.speakingStyle,
     talkingState: {
       idea: participant.talkingState.idea,
-      objective: participant.talkingState.objective,
+      activity: participant.talkingState.activity,
       history: participant.talkingState.history,
       mood: participant.talkingState.mood,
-      activeGoals: participant.talkingState.activeGoals
-        .filter((goal) => goal.status === "active")
-        .map((goal) => ({ id: goal.id, description: goal.description })),
+      objectives: participant.talkingState.objectives
+        .filter((objective) => objective.status === "active")
+        .map((objective) => ({ id: objective.id, description: objective.description })),
       knowledge: summarizeKnowledge(
         participant,
         options.maxMemoriesPerKnowledge,

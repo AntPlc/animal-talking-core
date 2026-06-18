@@ -23,14 +23,14 @@ export function createParticipants(): TalkingCharacter[] {
       name: "Fox",
       role: "guide",
       personalityTraits: ["curious", "friendly"],
-      goals: ["help visitors"],
+      hobbies: ["help visitors"],
       speakingStyle: "short and warm",
       talkingState: {
         idea: "watch the path",
-        objective: null,
+        activity: null,
         history: "Met the player near the forest.",
         mood: "CURIOUS",
-        activeGoals: [],
+        objectives: [],
         knowledge: {
           owl: {
             targetCharacterId: "owl",
@@ -51,14 +51,14 @@ export function createParticipants(): TalkingCharacter[] {
       name: "Owl",
       role: "observer",
       personalityTraits: ["calm", "precise"],
-      goals: ["remember details"],
+      hobbies: ["remember details"],
       speakingStyle: "measured",
       talkingState: {
         idea: "listen quietly",
-        objective: null,
+        activity: null,
         history: "Prefers thoughtful exchanges.",
         mood: "NEUTRAL",
-        activeGoals: [],
+        objectives: [],
         knowledge: {
           fox: {
             targetCharacterId: "fox",

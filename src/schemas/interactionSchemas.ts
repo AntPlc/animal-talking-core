@@ -12,15 +12,15 @@ import type { ValidationIssue } from "../types/errors.js";
 
 export const characterUpdateTypes = [
   "UPDATE_MOOD",
-  "UPDATE_OBJECTIVE",
+  "UPDATE_ACTIVITY",
   "ADD_MEMORY",
   "UPDATE_RELATIONSHIP",
   "APPEND_HISTORY",
-  "ADD_GOAL",
-  "FULFILL_GOAL",
+  "ADD_OBJECTIVE",
+  "FULFILL_OBJECTIVE",
 ] as const;
 
-export const npcGoalStatuses = ["active", "fulfilled"] as const;
+export const npcObjectiveStatuses = ["active", "fulfilled"] as const;
 
 export const moods: readonly Mood[] = [
   "NEUTRAL",
@@ -41,7 +41,7 @@ export const relationshipTypes = [
   "ROMANTIC_INTEREST",
 ] as const;
 
-export const objectiveTypes = [
+export const activityTypes = [
   "GO_TO_LOCATION",
   "TALK_TO_CHARACTER",
   "IDLE",
